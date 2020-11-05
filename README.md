@@ -22,7 +22,7 @@ if you prefer fzf
 
 fallback UI, good enough with no dependency requirement
 
-![default](https://user-images.githubusercontent.com/61080/98230687-654c8080-1f96-11eb-9f12-414ce55d3a55.gif)
+![plainsel](https://user-images.githubusercontent.com/61080/98231223-17844800-1f97-11eb-9d81-efe4f09eea2b.gif)
 
 
 # Requirement:
