@@ -1,0 +1,109 @@
+#!/bin/sh
+
+# shellcheck disable=2086,2059
+
+set -e
+DIR="$(dirname "$(readlink -f "$0")")"
+
+# compose selector command if not specified
+if [ -z "$D_SELECTOR" ]; then
+    if command  -v dmenu >/dev/null; then
+        D_SELECTOR='dmenu -i -fn monospace:13 -nb #626262 -nf  #bbbbbb -sb  #5b97f7 -sf  #eeeeee -l 20'
+        dmenu -h 2>&1 | grep -qF ' [-n number]' && D_SELECTOR="$D_SELECTOR -n %i"
+        dmenu -h 2>&1 | grep -qP '\[-\w*c\w*\]' && D_SELECTOR="$D_SELECTOR -c"
+    elif command -v fzf >/dev/null; then
+        D_SELECTOR='fzf --reverse --height=30%%'
+    else
+        D_SELECTOR='plainsel'
+    fi
+fi
+EMPTY_RESULT=' ¯\_(ツ)_/¯'
+GREETING='﬜ ( ͡° ͜ʖ ͡°)_/¯'
+
+
+request() {
+    RESULT="$(
+        curl -SsLG "http://dict.youdao.com/w/eng/$SENTENCE/" \
+            | awk -v PI=' ' -f "$DIR/parsers/youdao.awk"
+    )"
+    display
+}
+
+pronounce() {
+    ! command -v afplay >/dev/null && ! command -v ffplay >/dev/null && echo 'require either afplay or ffplay' && exit 1
+    PLAY=afplay
+    ! command -v "$PLAY" 2>/dev/null && PLAY="ffplay -nodisp -autoexit"
+    FP="/tmp/dict/$*.mp3"
+    mkdir -p /tmp/dict
+    [ ! -f "$FP" ] && curl -o  "$FP" "http://dict.youdao.com/dictvoice?audio=$1&type=$2" 1>/dev/null 2>&1
+    $PLAY "$FP" 1>/dev/null 2>&1
+}
+
+invalidsel() {
+    echo "$*" | grep -qF "$EMPTY_RESULT" || echo "$INPUT" | grep -qF "$GREETING"
+}
+
+plainsel() {
+    # render menu
+    MENU=$(awk '{ printf "\033[47m\033[30m%2d.\033[0m %s\n", NR, $0 }')
+    echo "$MENU" >&2
+    invalidsel "$MENU" && exit
+    printf "    Enter line-no to pronounce or copy: " >&2
+    if read -r SI </dev/tty && [ -n "$SI" ]; then
+        # delete menu
+        cols=$(tput cols)
+        rows=$(echo "$RESULT" | awk 'END{print NR}')
+        for _ in $(seq $rows); do
+            printf "\r%${cols}s\033[A" >&2
+        done
+        printf "\033[F" >&2
+        # output selected menu item
+        printf "$RESULT" | awk "NR == $SI { print }"
+    else
+        exit
+    fi
+}
+
+display() {
+    R="$RESULT"
+    if [ -z "$R" ]; then
+        if [ -n "$SENTENCE" ]; then
+            R="$EMPTY_RESULT : $SENTENCE"
+        else
+            R="$GREETING"
+        fi
+    fi
+    SELECT=$(printf "$D_SELECTOR" "$LINE_NUM")
+    echo "$R" \
+        | $SELECT \
+        | if IFS= read -r INPUT; then
+            # process selected menu item
+            if echo "$INPUT" | grep -qP ' '; then
+                if echo "$INPUT" | grep -q '美'; then
+                    pronounce "$SENTENCE" 2 &
+                else
+                    pronounce "$SENTENCE" 1 &
+                fi
+                LINE_NUM=$(echo "$RESULT" | awk -v INPUT="$INPUT" '$0==INPUT { print NR - 1 }')
+                display $LINE_NUM
+            elif invalidsel "$INPUT"; then
+                return
+            elif echo "$INPUT" | grep -qP '^ '; then
+                printf "%s" "$INPUT" | sed -E 's/^\s+//' |  xsel -b
+                echo "'$(xsel -ob)' is copied to clipboard"
+            else
+                SENTENCE="$INPUT"
+                request
+            fi
+          fi
+}
+
+
+SENTENCE="$*"
+if [ -n "$SENTENCE" ]; then
+    request
+else
+    display
+fi
+#pronounce "$@"
+
