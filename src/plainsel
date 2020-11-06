@@ -1,0 +1,72 @@
+#!/bin/sh
+
+set -e
+MENU=$(awk '{print}')
+[ -z "$SELECTED" ] && SELECTED=0
+SELECTED=$((SELECTED + 1))
+LINES=
+COLUMNS=$(tput cols)
+
+render() {
+    echo "$MENU" | awk -v I="$SELECTED" '{ printf NR == I ? "\033[32m\033[1m> %s\033[0m\n" : "  %s\n", $0 }'
+    printf  "Press j,k,n,p to move, Enter to select, ESC to quit  "
+    LINES=$(echo "$MENU" | awk 'END{print NR}')
+}
+
+reset() {
+    printf '\r'
+    for _ in $(seq "$LINES"); do
+        case $1 in
+            clean)
+                printf "\r%${COLUMNS}s\r\033[A"
+                ;;
+            move)
+                printf "\r\033[A"
+                ;;
+        esac
+    done
+}
+
+refresh() {
+    tput civis
+    reset move
+    render
+    tput cnorm
+}
+
+readkey() {
+    ttybak=$(stty -g -F /dev/tty)
+    stty -icanon min 1 -echo time 0 -F /dev/tty
+    KC=$(dd bs=1 count=1 2>/dev/null if=/dev/tty | xxd | awk '{print $2}')
+    stty "$ttybak" -F /dev/tty
+    echo "$KC"
+}
+
+loop() {
+    # https://unix.stackexchange.com/questions/464930/can-i-read-a-single-character-from-stdin-in-posix-shell
+    KEY=$(readkey)
+    case $KEY in
+        1b|71) # ESC|q
+            exit
+            ;;
+        0a) # ENTER
+            reset clean >&2
+            echo "$MENU" | awk "NR == $SELECTED { print }"
+            exit
+            ;;
+        6a|6e) # n|j
+            [ "$SELECTED" -lt "$LINES" ] && SELECTED=$(( SELECTED + 1 ))
+            ;;
+        6b|70) # k|p
+            [ "$SELECTED" -gt 1 ] && SELECTED=$(( SELECTED - 1 ))
+            ;;
+        *)
+            printf "unkown key %s" "$KEY"
+            ;;
+    esac
+    refresh >&2
+    loop
+}
+
+render >&2
+loop

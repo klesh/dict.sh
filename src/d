@@ -14,9 +14,10 @@ if [ -z "$D_SELECTOR" ]; then
     elif command -v fzf >/dev/null; then
         D_SELECTOR='fzf --reverse --height=30%%'
     else
-        D_SELECTOR='plainsel'
+        D_SELECTOR="plainsel"
     fi
 fi
+[ "$D_SELECTOR" = "plainsel" ] && D_SELECTOR="SELECTED=%d $DIR/plainsel"
 EMPTY_RESULT=' ¯\_(ツ)_/¯'
 GREETING='﬜ ( ͡° ͜ʖ ͡°)_/¯'
 
@@ -43,27 +44,6 @@ invalidsel() {
     echo "$*" | grep -qF "$EMPTY_RESULT" || echo "$INPUT" | grep -qF "$GREETING"
 }
 
-plainsel() {
-    # render menu
-    MENU=$(awk '{ printf "\033[47m\033[30m%2d.\033[0m %s\n", NR, $0 }')
-    echo "$MENU" >&2
-    invalidsel "$MENU" && exit
-    printf "    Enter line-no to pronounce or copy: " >&2
-    if read -r SI </dev/tty && [ -n "$SI" ]; then
-        # delete menu
-        cols=$(tput cols)
-        rows=$(echo "$RESULT" | awk 'END{print NR}')
-        for _ in $(seq $rows); do
-            printf "\r%${cols}s\033[A" >&2
-        done
-        printf "\033[F" >&2
-        # output selected menu item
-        printf "$RESULT" | awk "NR == $SI { print }"
-    else
-        exit
-    fi
-}
-
 display() {
     R="$RESULT"
     if [ -z "$R" ]; then
@@ -75,7 +55,7 @@ display() {
     fi
     SELECT=$(printf "$D_SELECTOR" "$LINE_NUM")
     echo "$R" \
-        | $SELECT \
+        | eval $SELECT \
         | if IFS= read -r INPUT; then
             # process selected menu item
             if echo "$INPUT" | grep -qP ' '; then
