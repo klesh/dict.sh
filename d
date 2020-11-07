@@ -3,7 +3,6 @@
 # shellcheck disable=2086,2059
 
 set -e
-DIR="$(dirname "$(readlink -f "$0")")"
 
 # compose selector command if not specified
 if [ -z "$D_SELECTOR" ]; then
@@ -11,21 +10,18 @@ if [ -z "$D_SELECTOR" ]; then
         D_SELECTOR='dmenu -i -fn monospace:13 -nb "#626262" -nf  "#bbbbbb" -sb "#5b97f7" -sf "#eeeeee" -l 20'
         dmenu -h 2>&1 | grep -qF ' [-n number]' && D_SELECTOR="$D_SELECTOR -n %i"
         dmenu -h 2>&1 | grep -qP '\[-\w*c\w*\]' && D_SELECTOR="$D_SELECTOR -c"
-    elif command -v fzf >/dev/null; then
-        D_SELECTOR='fzf --reverse --height=30%%'
     else
         D_SELECTOR="plainsel"
     fi
 fi
-[ "$D_SELECTOR" = "plainsel" ] && D_SELECTOR="SELECTED=%d $DIR/plainsel"
+[ "$D_SELECTOR" = "plainsel" ] && D_SELECTOR="SELECTED=%d plainsel"
 EMPTY_RESULT=' ¯\_(ツ)_/¯'
 GREETING='﬜ ( ͡° ͜ʖ ͡°)_/¯'
-echo "$D_SELECTOR"
 
 request() {
     RESULT="$(
         curl -SsLG "http://dict.youdao.com/w/eng/$SENTENCE/" \
-            | awk -v PI=' ' -f "$DIR/parsers/youdao.awk"
+            | d_youdao -v PI=' '
     )"
     display
 }
