@@ -34,6 +34,7 @@ refresh() {
     tput cnorm
 }
 
+# https://unix.stackexchange.com/questions/464930/can-i-read-a-single-character-from-stdin-in-posix-shell
 readkey() {
     ttybak=$(stty -g -F /dev/tty)
     stty -icanon min 1 -echo time 0 -F /dev/tty
@@ -43,7 +44,6 @@ readkey() {
 }
 
 loop() {
-    # https://unix.stackexchange.com/questions/464930/can-i-read-a-single-character-from-stdin-in-posix-shell
     KEY=$(readkey)
     case $KEY in
         1b|71) # ESC|q
