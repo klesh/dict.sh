@@ -5,7 +5,9 @@
 VERSION = 1.0
 PREFIX = /usr/local
 
-install:
+all:
+
+install: all
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
 	cp -f d d_youdao plainsel $(DESTDIR)$(PREFIX)/bin
 	chmod 755 $(DESTDIR)$(PREFIX)/bin/d
