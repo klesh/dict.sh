@@ -7,7 +7,7 @@ set -e
 # compose selector command if not specified
 if [ -z "$D_SELECTOR" ]; then
     if command  -v dmenu >/dev/null; then
-        D_SELECTOR='dmenu -i -fn monospace:13 -nb "#626262" -nf  "#bbbbbb" -sb "#5b97f7" -sf "#eeeeee" -l 20'
+        D_SELECTOR='dmenu -p dict.sh -i -fn monospace:13 -nb "#626262" -nf  "#bbbbbb" -sb "#5b97f7" -sf "#eeeeee" -l 20'
         dmenu -h 2>&1 | grep -qF ' [-n number]' && D_SELECTOR="$D_SELECTOR -n %i"
         dmenu -h 2>&1 | grep -qP '\[-\w*c\w*\]' && D_SELECTOR="$D_SELECTOR -c"
     else
