@@ -3,7 +3,7 @@
 .POSIX:
 
 VERSION = 1.0
-PREFIX = /usr/local
+PREFIX ?= /usr/local
 
 all:
 
