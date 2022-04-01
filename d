@@ -76,6 +76,7 @@ display() {
 
 
 SENTENCE="$*"
+SENTENCE=$(sed "s/ /%20/g" <<<"$SENTENCE")
 if [ -n "$SENTENCE" ]; then
     request
 else
