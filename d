@@ -19,6 +19,7 @@ EMPTY_RESULT=' ¯\_(ツ)_/¯'
 GREETING='﬜ ( ͡° ͜ʖ ͡°)_/¯'
 
 request() {
+    SENTENCE=$(sed "s/ /%20/g" <<<"$SENTENCE")
     RESULT="$(
         curl -SsLG "http://dict.youdao.com/w/eng/$SENTENCE/" \
             | d_youdao -v PI=' '
@@ -76,7 +77,6 @@ display() {
 
 
 SENTENCE="$*"
-SENTENCE=$(sed "s/ /%20/g" <<<"$SENTENCE")
 if [ -n "$SENTENCE" ]; then
     request
 else
