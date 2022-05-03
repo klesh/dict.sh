@@ -19,7 +19,7 @@ EMPTY_RESULT=' ¯\_(ツ)_/¯'
 GREETING='﬜ ( ͡° ͜ʖ ͡°)_/¯'
 
 request() {
-    SENTENCE=$(sed "s/ /%20/g" <<<"$SENTENCE")
+    SENTENCE=$(printf "$SENTENCE" | sed "s/ /%20/g")
     RESULT="$(
         curl -SsLG "http://dict.youdao.com/w/eng/$SENTENCE/" \
             | d_youdao -v PI=' '
